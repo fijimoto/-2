@@ -1,15 +1,17 @@
 import pytest
 
 from browser import Browser
-from enums import Language
 
 
 @pytest.fixture
-def driver(request):
-    """Браузер для каждого теста (чистый кеш и куки)"""
-    language = getattr(request, "param", Language.EN)
+def browser_instance(request):
+    Browser._instance = None
+    Browser._driver = None
 
-    browser = Browser(language=language.value)
+    language = request.node.callspec.params.get("language", "en")
+    lang_value = language.value if hasattr(language, "value") else language
+
+    browser = Browser(lang_value)
     driver = browser.get_driver()
     driver.maximize_window()
 

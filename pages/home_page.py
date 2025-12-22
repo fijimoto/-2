@@ -9,13 +9,14 @@ class HomePage(BasePage):
     SEARCH_BUTTON = (
         By.XPATH, "//form[@role='search']//button[@type='submit']")
 
-    def search_game(self, game_name: str):
-        """Поиск по названию игры"""
+    def search_game(self, game_name):
+        """Поиск игры по названию"""
         search_input = self.wait.until(
             EC.visibility_of_element_located(self.SEARCH_INPUT)
         )
         search_input.clear()
         search_input.send_keys(game_name)
+
         search_button = self.wait.until(
             EC.element_to_be_clickable(self.SEARCH_BUTTON)
         )

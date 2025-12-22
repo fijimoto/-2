@@ -1,6 +1,6 @@
 import pytest
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from config_reader import ConfigReader
 from enums import Language
@@ -15,11 +15,13 @@ class TestSteamSearch:
         ("The Witcher", 10),
         ("Fallout", 20),
     ])
-    def test_price_sorting_desc(self, driver, game_name, count, language):
+    def test_price_sorting_desc(self, browser_instance, game_name, count, language):
         """Проверка сортировки игр по убыванию цены"""
+        driver = browser_instance
+
         driver.get(ConfigReader.get("base_url"))
         WebDriverWait(driver, ConfigReader.get("timeout")).until(
-            EC.presence_of_element_located(HomePage.SEARCH_INPUT)
+            EC.visibility_of_element_located(HomePage.SEARCH_INPUT)
         )
 
         home_page = HomePage(driver)

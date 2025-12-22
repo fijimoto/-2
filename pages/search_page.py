@@ -1,6 +1,7 @@
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 from pages.base_page import BasePage
 
@@ -10,11 +11,12 @@ class SearchPage(BasePage):
     SORT_PRICE_DESC = (By.ID, "Price_DESC")
     GAME_CARDS = (By.XPATH, "//a[contains(@class, 'search_result_row')]")
     PRICE_ELEMENT = (By.XPATH, ".//div[@data-price-final]")
-    ACTIVE_SORT_OPTION = (
-        By.XPATH, "//a[@id='Price_DESC' and contains(@class, 'active')]")
+
+    LOADER = (
+        By.XPATH, "//div[@id='search_result_container' and contains(@style, 'opacity: 0.5')]")
 
     def sort_by_price_desc(self):
-        """Выбираем сортировку по убыванию цены"""
+        """Сортировка по убыванию цены"""
         dropdown = self.wait.until(
             EC.element_to_be_clickable(self.SORT_DROPDOWN)
         )
@@ -25,12 +27,20 @@ class SearchPage(BasePage):
         )
         price_option.click()
 
+        fast_wait = WebDriverWait(self.driver, 10, poll_frequency=0.1)
+
+        try:
+            fast_wait.until(EC.presence_of_element_located(self.LOADER))
+        except TimeoutException:
+            pass
+
+        fast_wait.until_not(EC.presence_of_element_located(self.LOADER))
+
         self.wait.until(
-            EC.presence_of_element_located(self.ACTIVE_SORT_OPTION)
+            EC.presence_of_all_elements_located(self.GAME_CARDS)
         )
 
-    def get_prices(self, count: int) -> list[int]:
-        """Возвращаем список цен первых N игр"""
+    def get_prices(self, count):
         cards = self.wait.until(
             EC.presence_of_all_elements_located(self.GAME_CARDS)
         )[:count]
