@@ -1,8 +1,5 @@
 import pytest
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
-from config_reader import ConfigReader
 from enums import Language
 from pages.home_page import HomePage
 from pages.search_page import SearchPage
@@ -17,22 +14,19 @@ class TestSteamSearch:
     ])
     def test_price_sorting_desc(self, browser_instance, game_name, count, language):
         """Проверка сортировки игр по убыванию цены"""
-        driver = browser_instance
+        home_page = HomePage(browser_instance)
+        search_page = SearchPage(browser_instance)
 
-        driver.get(ConfigReader.get("base_url"))
-        WebDriverWait(driver, ConfigReader.get("timeout")).until(
-            EC.visibility_of_element_located(HomePage.SEARCH_INPUT)
-        )
-
-        home_page = HomePage(driver)
-        search_page = SearchPage(driver)
+        home_page.open()
+        assert home_page.is_opened(), "Главная страница не открылась"
 
         home_page.search_game(game_name)
+
+        assert search_page.is_opened(), "Страница поиска не открылась"
 
         search_page.sort_by_price_desc()
 
         prices = search_page.get_prices(count)
 
         expected = sorted(prices, reverse=True)
-        assert prices == expected, \
-            f"Actual: {prices}, Expected: {expected}"
+        assert prices == expected, f"Actual: {prices}, Expected: {expected}"

@@ -1,6 +1,7 @@
 import pytest
 
 from browser import Browser
+from enums import Language
 
 
 @pytest.fixture
@@ -8,12 +9,10 @@ def browser_instance(request):
     Browser._instance = None
     Browser._driver = None
 
-    language = request.node.callspec.params.get("language", "en")
-    lang_value = language.value if hasattr(language, "value") else language
+    language = request.node.callspec.params.get("language", Language.EN)
 
-    browser = Browser(lang_value)
+    browser = Browser(language)
     driver = browser.get_driver()
-    driver.maximize_window()
 
     yield driver
 
