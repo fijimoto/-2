@@ -1,38 +1,44 @@
 from selenium import webdriver
+from selenium.common import WebDriverException
 from selenium.webdriver.chrome.options import Options
 
 from enums import Language
+from config_reader import ConfigReader
 
 
 class Browser:
-    _instance = None
     _driver = None
-
-    def __new__(cls, language=Language.EN):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._driver = cls._create_driver(language)
-        return cls._instance
+    _lang = None
 
     @staticmethod
-    def _create_driver(language):
-        options = Options()
-        lang_value = language.value if hasattr(language, "value") else language
-        options.add_argument(f"--lang={lang_value}")
-        options.add_argument("--start-maximized")
-        options.add_argument("--disable-blink-features=AutomationControlled")
-        options.add_experimental_option(
-            "excludeSwitches", ["enable-automation"])
-        options.add_experimental_option("useAutomationExtension", False)
-        return webdriver.Chrome(options=options)
-
-    @staticmethod
-    def get_driver():
+    def get(url: str, lang: Language = Language.RU):
+        if Browser._driver is None or Browser._lang != lang:
+            Browser._create_driver(lang)
+        Browser._driver.get(url)
         return Browser._driver
 
     @staticmethod
+    def _create_driver(lang: Language):
+        if Browser._driver:
+            try:
+                Browser._driver.quit()
+            except WebDriverException as e:
+                print(f"Ошибка при закрытии браузера: {e}")
+
+        config = ConfigReader()
+        options = Options()
+        options.add_experimental_option(
+            "prefs", {"intl.accept_languages": lang.value})
+
+        window_size = config.browser.get("window_size", "1920,1080")
+        options.add_argument(f"--window-size={window_size}")
+
+        Browser._driver = webdriver.Chrome(options=options)
+        Browser._lang = lang
+
+    @staticmethod
     def quit():
-        if Browser._driver is not None:
+        if Browser._driver:
             Browser._driver.quit()
-            Browser._driver = None
-            Browser._instance = None
+        Browser._driver = None
+        Browser._lang = None

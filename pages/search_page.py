@@ -1,63 +1,57 @@
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
-from config_reader import ConfigReader
 from pages.base_page import BasePage
 
 
 class SearchPage(BasePage):
-    SORT_DROPDOWN = (By.ID, "sort_by_trigger")
-    SORT_PRICE_DESC = (By.ID, "Price_DESC")
-    GAME_CARDS = (By.XPATH, "//a[contains(@class, 'search_result_row')]")
-    PRICE_ELEMENT = (By.XPATH, ".//div[@data-price-final]")
+    SORT_DROPDOWN = (
+        By.XPATH, "//button[contains(@class, 'trigger') and contains(@id, 'sort_by_trigger')]")
+    SORT_PRICE_DESC = (
+        By.XPATH, "//*[contains(@id,'sort_by_droplist')]//a[contains(@id,'Price_DESC')]")
+    ALL_PRICES = (By.CSS_SELECTOR,
+                  "a.search_result_row div.discount_final_price")
     LOADER = (
         By.XPATH, "//div[@id='search_result_container' and contains(@style, 'opacity: 0.5')]")
 
     def is_opened(self):
         """Проверка что страница поиска открыта"""
-        return self.wait.until(EC.presence_of_element_located(self.GAME_CARDS))
+        return self.wait.until(EC.visibility_of_element_located(self.SORT_DROPDOWN))
 
-    def sort_by_price_desc(self):
-        """Сортировка по убыванию цены"""
+    def click_sort_dropdown(self):
+        """Клик по dropdown сортировки"""
         dropdown = self.wait.until(
-            EC.element_to_be_clickable(self.SORT_DROPDOWN)
-        )
+            EC.element_to_be_clickable(self.SORT_DROPDOWN))
         dropdown.click()
 
-        price_option = self.wait.until(
-            EC.element_to_be_clickable(self.SORT_PRICE_DESC)
-        )
-        price_option.click()
+    def select_price_desc(self):
+        """Выбор сортировки по убыванию цены"""
+        option = self.wait.until(
+            EC.element_to_be_clickable(self.SORT_PRICE_DESC))
+        option.click()
 
-        fast_wait = WebDriverWait(
-            self.driver, ConfigReader.get("timeout"), poll_frequency=0.1)
-
-        try:
-            fast_wait.until(EC.presence_of_element_located(self.LOADER))
-        except TimeoutException:
-            pass
-
-        fast_wait.until_not(EC.presence_of_element_located(self.LOADER))
-
-        self.wait.until(
-            EC.presence_of_all_elements_located(self.GAME_CARDS)
-        )
+    def wait_results_updated(self):
+        """Ожидание обновления результатов"""
+        self.fast_wait.until(EC.visibility_of_element_located(self.LOADER))
+        self.fast_wait.until_not(EC.visibility_of_element_located(self.LOADER))
 
     def get_prices(self, count):
-        cards = self.wait.until(
-            EC.presence_of_all_elements_located(self.GAME_CARDS)
-        )[:count]
+        """Получение списка цен"""
+        prices_elements = self.wait.until(
+            EC.presence_of_all_elements_located(self.ALL_PRICES))
+        all_prices = []
 
-        prices = []
-        for card in cards:
+        for p in prices_elements:
+            lines = p.text.splitlines()
+            text = lines[-1].replace("€", "").replace(",",
+                                                      ".").replace("₽", "").strip()
             try:
-                price_el = card.find_element(*self.PRICE_ELEMENT)
-            except NoSuchElementException:
-                continue
+                price = float(text)
+            except ValueError:
+                price = 0.0
+            all_prices.append(price)
 
-            price = int(price_el.get_attribute("data-price-final"))
-            prices.append(price)
+            if len(all_prices) >= count:
+                break
 
-        return prices
+        return all_prices

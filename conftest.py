@@ -1,19 +1,31 @@
 import pytest
+from faker import Faker
 
-from browser import Browser
+from config_reader import ConfigReader
 from enums import Language
+from browser import Browser
+
+fake = Faker()
+config = ConfigReader()
 
 
-@pytest.fixture
-def browser_instance(request):
-    Browser._instance = None
-    Browser._driver = None
+@pytest.fixture()
+def random_email():
+    return fake.email()
 
-    language = request.node.callspec.params.get("language", Language.EN)
 
-    browser = Browser(language)
-    driver = browser.get_driver()
+@pytest.fixture()
+def random_password():
+    return fake.password(length=8)
 
-    yield driver
 
-    browser.quit()
+@pytest.fixture(params=[Language.RU, Language.EN], scope="function")
+def lang(request):
+    return request.param
+
+
+@pytest.fixture(scope="function")
+def driver(lang):
+    drv = Browser.get(url=config.base_urls["steam"], lang=lang)
+    yield drv
+    Browser.quit()

@@ -3,18 +3,20 @@ from pathlib import Path
 
 
 class ConfigReader:
-    _config = None
+    CONFIG_PATH = Path(__file__).parent / "config.json"
 
-    @staticmethod
-    def get_config():
-        """Загружаем конфиг один раз и кэшируем"""
-        if ConfigReader._config is None:
-            config_path = Path(__file__).parent / "config.json"
-            with open(config_path, encoding="utf-8") as file:
-                ConfigReader._config = json.load(file)
-        return ConfigReader._config
+    def __init__(self, path: Path = CONFIG_PATH):
+        with open(path, "r", encoding="utf-8") as f:
+            self._data = json.load(f)
 
-    @staticmethod
-    def get(key):
-        """Получаем значение по ключу"""
-        return ConfigReader.get_config().get(key)
+    @property
+    def base_urls(self) -> dict:
+        return self._data["base_urls"]
+
+    @property
+    def timeouts(self) -> dict:
+        return self._data["timeouts"]
+
+    @property
+    def browser(self) -> dict:
+        return self._data["browser"]
