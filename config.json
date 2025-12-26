@@ -1,0 +1,11 @@
+{
+  "base_urls": {
+    "steam": "https://store.steampowered.com/"
+  },
+  "timeouts": {
+    "wait_default": 10
+  },
+  "browser": {
+    "window_size": "1920,1080"
+  }
+}
